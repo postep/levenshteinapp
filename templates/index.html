@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <title>Porównanie przy pomocy metryki Levenshteina</title>
+    <script>
+        function updateResults() {
+            let pairs = [];
+            for (let i = 1; i <= 7; i++) {
+                let val1 = document.getElementById(`val1_${i}`).value;
+                let val2 = document.getElementById(`val2_${i}`).value;
+                pairs.push({ val1: val1, val2: val2 });
+            }
+            fetch("/calculate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ pairs: pairs })
+            })
+            .then(response => response.json())
+            .then(data => {
+                data.results.forEach((result, index) => {
+                    let cell = document.getElementById(`result_${index+1}`);
+                    cell.innerText = result;
+
+                    if (index === data.min_index || index === data.max_index) {
+                        cell.style.color = "red";
+                    } else {
+                        cell.style.color = "black";
+                    }
+                });
+            document.getElementById("average").innerText = data.average;
+
+            let status = document.getElementById("status");
+            if (data.average < 10) {
+                status.innerText = "OK!";
+                status.style.color = "green";
+            } else {
+                status.innerText = "NIE ZWALIDOWANO";
+                status.style.color = "black";
+            }
+            });
+        }
+    </script>
+</head>
+<body onload="updateResults()">
+    <div class="container my-4">
+    <h1 class="text-center mb-4">Porównanie charakterystyki przy pomocy metryki Levenshteina</h1>
+    <table class="table table-bordered table-striped text-center align-middle">
+        <thead class="table-dark">
+        <tr><th>Parametr</th><th>Wartość z formularza</th><th>Wartość z charakterystyki</th><th>Odległość cząstkowa</th></tr>
+        </thead>
+        {% for desc in descriptions %}
+        <tr>
+            <td>{{desc}}</td>
+            <td><input type="text" id="val1_{{loop.index}}" value="{{ values1[loop.index0] }}" oninput="updateResults()"></td>
+            <td><input type="text" id="val2_{{loop.index}}" value="{{ values2[loop.index0] }}" oninput="updateResults()"></td>
+            <td id="result_{{loop.index}}">0</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <h3>Wynikowy odległości całkowitej: <span id="average">0</span></h3>
+    <h3 id="status"></h3>
+    <p class="text-muted">
+    Im mniej tym lepiej. Współczynnik całkowity jest obliczany jako średnia odległości cząstkowych
+    po odrzuceniu najmniejszej i największej wartości. 
+    Wynik < 10 oznacza, że dane są podobne. Znaki specjalne są odrzucane.
+    Wielkość liter nie ma znaczenia.
+    </p>
+</div>
+</body>
+</html>
